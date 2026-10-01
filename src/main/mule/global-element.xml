@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/snowflake http://www.mulesoft.org/schema/mule/snowflake/current/mule-snowflake.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<snowflake:snowflake-config name="Snowflake_Config" doc:name="Snowflake Config" doc:id="b101215a-a91c-435a-a061-b93512e10050">
+        <snowflake:snowflake-connection accountName="${snowflake.accountName}" warehouse="${snowflake.warehouse}" database="${snowflake.database}" schema="${snowflake.schema}" user="${snowflake.username}" password="${secure::snowflake.password}" role="${snowflake.role}" />
+    </snowflake:snowflake-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="84882148-a37f-4fec-aa22-6130734d0bf9" file="config\config.${mule.env}.yaml" />
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="0d911a11-b40a-440a-bc5f-fe0d930d2fb8" file="config\secureConfig.${mule.env}.yaml" key="${mule.secure.key}" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+</mule>

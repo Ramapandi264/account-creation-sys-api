@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/snowflake http://www.mulesoft.org/schema/mule/snowflake/current/mule-snowflake.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="banking-sys-api-implFlow-account-creation-flow" doc:id="a65e966d-ce7c-4dc3-b0e1-06a6f767f07c" >
+		<logger level="INFO" doc:name="Log - Flow Start" doc:id="ef0c3d1e-ac9c-4c6e-ac27-35cdf4981a74" message='#["Account creation flow started "]'/>
+		<ee:transform doc:name="Transform Message - Input Data" doc:id="a3232d52-05d1-4fda-8df5-19a031d4104d" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "FIRST_NAME": payload.firstName,
+    "LAST_NAME": payload.lastName,
+    "DATE_OF_BIRTH": payload.dateOfBirth,
+    "MOBILE_NUMBER": payload.mobileNumber,
+    "EMAIL": payload.email,
+    "AADHAAR_NUMBER": payload.aadhaarNumber,
+    "PAN_NUMBER": payload.panNumber,
+    "ACCOUNT_TYPE": payload.accountType,
+    "INITIAL_DEPOSIT": payload.initialDeposit,
+    "ADDRESS": write(payload.address, "application/json"),
+    "ACCOUNT_NUMBER": payload.accountNumber
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<snowflake:insert doc:name="Insert -account" doc:id="bcb6a23d-ce9e-4154-a8e7-acf0309e7fe4" config-ref="Snowflake_Config">
+			<snowflake:sql ><![CDATA[INSERT INTO ACCOUNT_Transactions (
+    FIRST_NAME,
+    LAST_NAME,
+    DATE_OF_BIRTH,
+    MOBILE_NUMBER,
+    EMAIL,
+    AADHAAR_NUMBER,
+    PAN_NUMBER,
+    ACCOUNT_TYPE,
+    INITIAL_DEPOSIT,
+    ADDRESS,
+    ACCOUNT_NUMBER
+)
+SELECT
+    :FIRST_NAME,
+    :LAST_NAME,
+    TO_DATE(:DATE_OF_BIRTH),
+    :MOBILE_NUMBER,
+    :EMAIL,
+    :AADHAAR_NUMBER,
+    :PAN_NUMBER,
+    :ACCOUNT_TYPE,
+    :INITIAL_DEPOSIT,
+    TO_VARIANT(PARSE_JSON(:ADDRESS)),
+    :ACCOUNT_NUMBER;]]></snowflake:sql>
+			<snowflake:input-parameters ><![CDATA[#[payload]]]></snowflake:input-parameters>
+		</snowflake:insert>
+		<ee:transform doc:name="Transform Message - Convert To JSON" doc:id="702e9fa4-1ed5-4aca-a8b0-db6b96862e77" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	status: "SUCCESS",
+	affectedRows: payload.affectedRows as String
+} ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log - Flow End" doc:id="67653691-afb5-4dba-91f0-b7dcf5573a67" message='#["Account creation flow completed "]'/>
+	</flow>
+	<flow name="banking-sys-api-implFlow-get-account-details" doc:id="fcb16787-15fd-457a-be2b-84d4f297b5bd" >
+		
+		<logger level="INFO" doc:name="Log - Flow Start" doc:id="e3f6dfe4-9073-44b0-8b69-82ddffdb6b84" message='#["get account details flow started "]'/>
+		<ee:transform doc:name="Transform Message - Input Variables">
+            <ee:variables>
+                <ee:set-variable variableName="acountID"><![CDATA[attributes.uriParams.'acountID']]></ee:set-variable>
+				<ee:set-variable variableName="accountType" ><![CDATA[attributes.queryParams.accountType]]></ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <snowflake:select doc:name="Select - Get Account Details" doc:id="5f630203-b5db-4a6d-a260-974c5d611326" config-ref="Snowflake_Config">
+			<snowflake:sql ><![CDATA[select * from ACCOUNT_Transactions where ACCOUNT_NUMBER = :ACCOUNT_NUMBER and ACCOUNT_TYPE = :ACCOUNT_TYPE]]></snowflake:sql>
+			<snowflake:input-parameters ><![CDATA[#[{
+	"ACCOUNT_NUMBER": vars.acountID,
+	"ACCOUNT_TYPE": vars.accountType
+}]]]></snowflake:input-parameters>
+		</snowflake:select>
+		<ee:transform doc:name="Transform Message - Convert To JSON" doc:id="d95e667a-67e0-49f9-b2f4-5e1185ee4219" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Log - Flow End" doc:id="37fab8d2-3f6e-4ccf-ac43-04f1f8d6cf3b" message='#["get account details flow completed "]'/>
+	</flow>
+</mule>

@@ -1,0 +1,7 @@
+snowflake:
+  accountName: BBUZYFR-WS95960
+  warehouse: COMPUTE_WH
+  database: APAR
+  schema: BFS
+  username: RPandi
+  role: ACCOUNTADMIN
